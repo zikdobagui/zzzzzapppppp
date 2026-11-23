@@ -16,5 +16,26 @@ function run(command, args) {
 
 // Gera o cliente para Linux, sem copiar binarios do computador Windows.
 run(process.execPath, ['node_modules/prisma/build/index.js', 'generate']);
-// Alteracoes do banco devem ser aplicadas separadamente, com backup.
-require('../dist/index.js');
+async function start() {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  let tables;
+  try {
+    tables = await prisma.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'");
+  } finally {
+    await prisma.$disconnect();
+  }
+  if (tables.length === 0) {
+    console.log('Banco vazio: criando tabelas com as migrations do projeto...');
+    run(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy']);
+  } else if (!tables.some(table => table.name === 'Bot')) {
+    throw new Error('Banco existente sem a tabela Bot. Os dados foram preservados; confira as migrations antes de continuar.');
+  }
+  // Bancos existentes exigem migracao planejada; nunca resetar automaticamente.
+  require('../dist/index.js');
+}
+
+start().catch(error => {
+  console.error('Falha ao preparar a aplicacao:', error.message);
+  process.exitCode = 1;
+});

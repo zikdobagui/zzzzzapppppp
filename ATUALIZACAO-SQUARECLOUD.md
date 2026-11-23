@@ -31,11 +31,10 @@ banco `prisma/database.sqlite` por canal privado, com backup. Nao substitua um
 banco que ja contenha dados na hospedagem. Sessoes de navegador do Windows
 podem precisar de nova autenticacao no Linux.
 
-Para uma instalacao com banco vazio, execute no terminal da hospedagem
-`node node_modules/prisma/build/index.js migrate deploy` depois da instalacao
-das dependencias e antes de iniciar o bot. Para banco existente sem historico
+Para uma instalacao com banco vazio, o iniciador executa `prisma migrate deploy`
+automaticamente antes de iniciar o bot. Para banco existente sem historico
 de migrations, e necessario conferir/baselinear o historico antes de migrar.
-O iniciador nao altera o esquema do banco automaticamente.
+O iniciador nao altera o esquema de bancos que ja contem tabelas.
 
 ## 3. Configure o GitHub uma vez
 
