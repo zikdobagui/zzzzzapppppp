@@ -57,9 +57,13 @@ O pacote envia somente codigo, assets e arquivos de configuracao. Nao inclui
 preserva os arquivos que nao recebeu. Arquivos de codigo removidos do projeto
 tambem permanecem no disco remoto, mas deixam de ser referenciados pelo build.
 
-O iniciador instala dependencias quando o lockfile muda e gera o Prisma para
-Linux antes de executar `dist/index.js`. A primeira inicializacao e mudancas
-de dependencias demoram mais e precisam de acesso ao registro npm. Mudancas
+O iniciador usa as dependencias instaladas pela Square Cloud e gera o Prisma
+para Linux antes de executar `dist/index.js`. Nao executa outra instalacao npm.
+Quando alterar dependencias, use a opcao de reinstalar dependencias da
+hospedagem antes de reiniciar; o commit pode preservar node_modules antigo.
+O package.json autoriza os scripts de instalacao de Prisma, Puppeteer e esbuild
+nas versoes do npm que exigem allowScripts. Se a instalacao foi interrompida,
+reinstale as dependencias pelo painel depois de enviar esta correcao. Mudancas
 de esquema exigem backup e migracao planejada separadamente. O processo de
 deploy pode ter sido enviado mesmo se a nova versao falhar ao iniciar: confira
 tambem os logs na Square Cloud. Nao ha rollback automatico.

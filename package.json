@@ -23,6 +23,13 @@
 	"author": "NeguinDev",
 	"license": "ISC",
 	"private": true,
+	"allowScripts": {
+		"@prisma/client": true,
+		"@prisma/engines": true,
+		"prisma": true,
+		"puppeteer": true,
+		"esbuild": true
+	},
 	"tsup": {
 		"clean": true,
 		"bundle": true
