@@ -1,0 +1,165 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./database.sqlite"
+}
+
+model User {
+    id            Int             @id @default(autoincrement())
+    wid           String
+    balance       Float           @default(0)
+    affiliated    String          @default("")
+    botId         Int
+    affiliateds   Affiliateds[]
+    gifts         Gifts[]
+    loginsHistory LoginsHistory[]
+    pixHistory    PixHistory[]
+    bot           Bot             @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    stockApiOrders StockApiOrder[]
+}
+
+model Bot {
+    id                  Int      @id @default(autoincrement())
+    wid                 String   @unique
+    name                String
+    owner               String
+    mercadoPagoToken    String   @default("")
+    pixManualKey        String   @default("")
+    pixManualAdditional String   @default("")
+    pixType             String   @default("auto")
+    pixMin              Int      @default(1)
+    pixMax              Int      @default(100)
+    notifySalesWid      String   @default("")
+    textMenu            String   @default("Menu")
+    textSupport         String   @default("Suporte")
+    textPix             String   @default("")
+    textLogin           String   @default("Selecione um Login")
+    textPixManual       String   @default("Envie o comprovante para o suporte")
+    textAffiliateds     String   @default("Compartilhe seu link e ganhe bonus a cada pix inserido")
+    expireAt            DateTime @default(now())
+    block               Boolean  @default(false)
+    doubleBalance       Boolean  @default(false)
+    fakeNotify          Boolean  @default(false) @map("notifyFalse")
+    bonus               Int      @default(0)
+    maintenance         Boolean  @default(false)
+
+    admins         Admins[]
+    affiliateds    Affiliateds[]
+    botMaster      BotMaster[]
+    gifts          Gifts[]
+    logins         Logins[]
+    loginsHistory  LoginsHistory[]
+    loginsSettings LoginsSettings[]
+    pixHistory     PixHistory[]
+    users          User[]
+    stockApiOrders StockApiOrder[]
+}
+
+model BotMaster {
+    id               Int    @id @default(autoincrement())
+    wid              String @unique
+    mercadoPagoToken String @default("")
+    priceWeek        Int    @default(10)
+    botId            Int
+    bot              Bot    @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Logins {
+    id         Int            @id @default(autoincrement())
+    name       String
+    user       String
+    password   String
+    additional String         @default("")
+    botId      Int
+    settingId  Int
+    setting    LoginsSettings @relation(fields: [settingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    bot        Bot            @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model LoginsSettings {
+    id     Int      @id @default(autoincrement())
+    name   String   @unique
+    price  Float    @default(0)
+    image  Bytes?
+    text   String   @default("")
+    botId  Int
+    logins Logins[]
+    bot    Bot      @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Affiliateds {
+    id     Int    @id @default(autoincrement())
+    wid    String
+    botId  Int
+    userId Int
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    bot    Bot    @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model LoginsHistory {
+    id              Int      @id @default(autoincrement())
+    loginName       String
+    loginPrice      Float
+    loginUser       String
+    loginPassword   String
+    loginAdditional String   @default("")
+    createAt        DateTime @default(now())
+    botId           Int
+    userId          Int
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    bot             Bot      @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Gifts {
+    id         Int       @id @default(autoincrement())
+    code       String    @unique
+    amount     Int
+    redeemed   Boolean   @default(false)
+    createAt   DateTime  @default(now())
+    redeemedAt DateTime?
+    botId      Int
+    userId     Int?
+    user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    bot        Bot       @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Admins {
+    id    Int    @id @default(autoincrement())
+    wid   String
+    botId Int
+    bot   Bot    @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model PixHistory {
+    id       Int      @id @default(autoincrement())
+    amount   Float
+    createAt DateTime @default(now())
+    botId    Int
+    userId   Int
+    user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    bot      Bot      @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model StockApiOrder {
+    id           String   @id
+    requestKey   String   @unique
+    botId        Int
+    userId       Int
+    serviceName  String
+    price        Float
+    cost         Float
+    status       String   @default("PROCESSING")
+    accessJson   String?
+    historyId    Int?
+    errorCode    String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    bot          Bot      @relation(fields: [botId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    @@index([botId, status])
+    @@index([userId, status])
+}

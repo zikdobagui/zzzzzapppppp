@@ -1,0 +1,13 @@
+node_modules/
+tokens/*
+.env
+prisma/backups/
+.test-build/
+.runtime/
+.env.*
+!.env.example
+prisma/*.sqlite*
+prisma/*.db*
+*.zip
+.deploy/
+squarecloud-update.zip

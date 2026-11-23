@@ -1,0 +1,61 @@
+name: Atualizar bot na Square Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: squarecloud-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verificar configuracao
+        env:
+          API_KEY: ${{ secrets.SQUARECLOUD_API_KEY }}
+          APP_ID: ${{ vars.SQUARECLOUD_APP_ID }}
+        run: |
+          test -n "$API_KEY" || { echo 'Cadastre o secret SQUARECLOUD_API_KEY no GitHub.'; exit 1; }
+          test -n "$APP_ID" || { echo 'Cadastre a variable SQUARECLOUD_APP_ID no GitHub.'; exit 1; }
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Instalar e compilar
+        run: |
+          npm ci --include=dev
+          npx --no-install prisma generate
+          npm run build
+
+      - name: Montar pacote de atualizacao sem dados privados
+        shell: python
+        run: |
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          files = [Path(p) for p in ('package.json', 'package-lock.json', 'squarecloud.app', 'scripts/start-squarecloud.cjs', 'prisma/schema.prisma')]
+          for folder in ('dist', 'assets', 'prisma/migrations'):
+              files.extend(p for p in Path(folder).rglob('*') if p.is_file())
+          assert Path('dist/index.js').is_file(), 'Build ausente'
+          with ZipFile('squarecloud-update.zip', 'w', ZIP_DEFLATED) as archive:
+              for p in files:
+                  assert not p.is_symlink(), f'Link simbolico nao permitido: {p}'
+                  archive.write(p, p.as_posix())
+
+      - name: Atualizar e reiniciar o bot
+        uses: squarecloudofc/github-action@v2
+        with:
+          token: ${{ secrets.SQUARECLOUD_API_KEY }}
+          command: commit --file squarecloud-update.zip ${{ vars.SQUARECLOUD_APP_ID }} --restart
