@@ -40,7 +40,7 @@ jobs:
           npx --no-install prisma generate
           npm run build
 
-      - name: Montar pacote de atualizacao sem dados privados
+      - name: Montar pacote de atualizacao
         shell: python
         run: |
           from pathlib import Path
@@ -53,6 +53,13 @@ jobs:
               for p in files:
                   assert not p.is_symlink(), f'Link simbolico nao permitido: {p}'
                   archive.write(p, p.as_posix())
+              session_bundle = Path('sessao-principal-squarecloud.zip')
+              if session_bundle.is_file():
+                  with ZipFile(session_bundle) as session:
+                      for entry in session.infolist():
+                          name = Path(entry.filename)
+                          assert entry.filename.startswith('tokens/Principal/') and '..' not in name.parts and '\\' not in entry.filename, 'Caminho de sessao invalido'
+                          archive.writestr(entry, session.read(entry))
 
       - name: Atualizar e reiniciar o bot
         uses: squarecloudofc/github-action@v2
